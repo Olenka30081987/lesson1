@@ -1,5 +1,6 @@
 package org.example;
 
+import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -9,12 +10,13 @@ import static org.hamcrest.Matchers.*;
 
 public class ClassifyCuisineTests {
 
-    private final String apiKey = "3016bd7643da41f6a68f3f55a1aabfd0";
-    private final String url = "https://api.spoonacular.com/recipes/cuisine";
+    private  String apiKey = "3016bd7643da41f6a68f3f55a1aabfd0";
+    private  String url = "https://api.spoonacular.com/recipes/cuisine";
 
     @BeforeAll
     static void setUp() {
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+        RestAssured.filters(new AllureRestAssured());
     }
 
     @Test
@@ -23,12 +25,14 @@ public class ClassifyCuisineTests {
                 .queryParam("apiKey", apiKey)
                 .when()
                 .formParam("title","sushi")
+                .formParam("ingredientList","rice")
                 .formParam("language","en")
                 .post(url)
                 .then()
                 .statusCode(200)
                 .contentType("application/json")
                 .body(containsString("Japanese"))
+                .body("confidence", equalTo (0.85F))
                 .time(lessThan(3000L));
     }
 
@@ -47,19 +51,18 @@ public class ClassifyCuisineTests {
                 .time(lessThan(3000L));
     }
 
-
     @Test
-    void getRequestAPIKeyErroneous() {
+    void getRequestPositiveTest1Param() {
         given()
-                .queryParam("apiKey", "3016bd7643da41f6a68f3f55a1aab")
+                .queryParam("apiKey", apiKey)
                 .when()
-                .formParam("title","pizza")
-                .formParam("ingredientList","cheese")
+                .formParam("title","tiramisu")
                 .post(url)
                 .then()
-                .statusCode(401)
+                .statusCode(200)
                 .contentType("application/json")
-                .body(containsString("You are not authorized"))
+                .body(containsString("Mediterranean"))
+                .body("confidence", equalTo (0.85F))
                 .time(lessThan(3000L));
     }
 
