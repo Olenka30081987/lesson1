@@ -1,52 +1,36 @@
 package org.example;
 
-import io.qameta.allure.restassured.AllureRestAssured;
-import io.restassured.RestAssured;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
-public class ShoppingListTests {
+public class ShoppingListTests extends AbstractTest{
 
-    private String apiKey = "3016bd7643da41f6a68f3f55a1aabfd0";
     private  String url = "https://api.spoonacular.com/mealplanner/olga drevina/shopping-list/items";
     private  String hash = "c3597fc505bea8db3bfa1d49c3e421fe4aa5c8c3";
     private String id;
-    @BeforeAll
-    static void setUp() {
-        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
-        RestAssured.filters(new AllureRestAssured());
-    }
-
 
     @Test
     void addShoppingListTest() {
-         id = given()
-                .queryParam("apiKey", apiKey)
+        ShoppingListRequest shoppingListRequest = new ShoppingListRequest("1 kilogram sugar", "Baking", true);
+        ShoppingListResponse shoppingListResponse = given()
                 .queryParam("hash", hash)
                 .queryParam("username", "olga drevina")
-                .body("{\n"
-                        + " \"item\": \"1 kilogram sugar\",\n"
-                        + " \"aisle\": \"Baking\",\n"
-                        + " \"parse\": true,\n"
-                        + "}")
+                .body(shoppingListRequest)
                 .when()
                 .post(url)
                 .then()
-                .statusCode(200)
                 .extract()
-                .jsonPath()
-                .get("id")
-                .toString();
-    }
+                .response()
+                .body()
+                .as(ShoppingListResponse.class);
 
-    @AfterEach
-    void tearDown() {
+        id = shoppingListResponse.getId().toString();
+        assertThat(shoppingListResponse.getName(), containsString("sugar"));
+
         given()
-                .queryParam("apiKey", apiKey)
                 .queryParam("hash", hash)
                 .delete(url + "/" + id)
                 .then()
